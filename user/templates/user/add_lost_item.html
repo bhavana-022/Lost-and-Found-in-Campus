@@ -1,0 +1,181 @@
+{% extends 'layout.html' %}
+{% block title %}Add Lost Product{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-image: url("{{ url_for('static', filename='images/uploads/background3.jpeg') }}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-attachment: fixed;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: "Times New Roman", Times, serif;
+        background-color: #f4f4f8;
+    }
+
+    .form-section {
+        background-color: #ffffff;
+        max-width: 650px;
+        margin: 5px auto;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        font-family: "Times New Roman", Times, serif;
+    }
+
+    .form-section h2 {
+        text-align: center;
+        font-size: 30px;
+        color: #c62877;
+        margin-bottom: 30px;
+    }
+
+    .form-section input[type="text"],
+    .form-section input[type="file"],
+    .form-section select,
+    .form-section textarea {
+        width: 100%;
+        padding: 12px 15px;
+        margin-top: 12px;
+        margin-bottom: 20px;
+        font-family: "Times New Roman", Times, serif;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        box-sizing: border-box;
+    }
+
+    .form-section label {
+        font-weight: bold;
+        color: #444;
+        margin-top: 15px;
+        display: block;
+    }
+
+    .form-section textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .form-section input[type="submit"] {
+        background-color: #7b4fdd;
+        color: white;
+        padding: 14px;
+        font-size: 18px;
+        border: none;
+        border-radius: 30px;
+        width: 100%;
+        font-family: "Times New Roman", Times, serif;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 5px 20px rgba(123, 79, 221, 0.3);
+    }
+
+    .form-section input[type="submit"]:hover {
+        background-color: #6239d1;
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="form-section">
+    <h2>Report an Item</h2> 
+    <form id="reportForm" enctype="multipart/form-data"> 
+        <input type="text" name="name" placeholder="Your Name (as per login)" value="{{ session.get('user_name', '') }}" required>
+        <input type="text" name="roll_no" placeholder="Roll Number" required>
+        <input type="text" name="phone" placeholder="Phone Number" required>
+        <input type="text" name="product_name" placeholder="Product Name/Title" required>
+        
+        <select name="department" required>
+            <option value="" disabled selected>Select Department</option> 
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="MECH">MECH</option>
+        </select>
+
+        <input type="text" name="location_found" placeholder="Location Lost/Found" required> 
+        
+        <textarea name="description" placeholder="Detailed Description (color, brand, any specific marks, etc.)" required></textarea>
+        
+        <label for="item_status">Is this item you LOST, or an item you FOUND?</label>
+        <select name="item_status" id="item_status" class="form-control" required>
+            <option value="lost">I LOST this item</option>
+            <option value="found">I FOUND this item</option>
+        </select>
+
+        <label for="image">Upload Image of the Item:</label>
+        <input type="file" name="image" id="image" accept="image/png, image/jpeg, image/gif" required>
+        
+        <input type="submit" value="Report Item">
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        e.preventDefault(); 
+
+        const formData = new FormData(this); 
+
+        let missingFields = [];
+        if (!formData.get('name')) missingFields.push('Name');
+        if (!formData.get('roll_no')) missingFields.push('Roll Number');
+        if (!formData.get('phone')) missingFields.push('Phone Number');
+        if (!formData.get('product_name')) missingFields.push('Product Name');
+        if (!formData.get('department')) missingFields.push('Department');
+        if (!formData.get('location_found')) missingFields.push('Location');
+        if (!formData.get('description')) missingFields.push('Description');
+        if (!formData.get('item_status')) missingFields.push('Item Status (Lost/Found)');
+        if (!formData.get('image') || !formData.get('image').name) missingFields.push('Image');
+
+        if (missingFields.length > 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Missing Fields',
+                text: 'Please fill out all required fields: ' + missingFields.join(', '),
+            });
+            return;
+        }
+
+        fetch("{{ url_for('user.add_lost_item') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            return response.json().then(data => ({ ok: response.ok, status: response.status, data }));
+        })
+        .then(result => {
+            if (result.ok && result.data.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Item Reported!',
+                    text: result.data.message,
+                    timer: 3000,
+                    showConfirmButton: false
+                }).then(() => {
+                    if (result.data.redirect_url) {
+                        window.location.href = result.data.redirect_url;
+                    } else {
+                        window.location.reload();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: result.data.message || 'Report Failed',
+                    text: `Error: ${result.data.message || 'Could not process the report. Please check your input.'} (Status: ${result.status})`,
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Fetch Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops! Network or Parsing Error',
+                text: 'Something went wrong while communicating with the server. Please check your internet connection and try again. ' + error,
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

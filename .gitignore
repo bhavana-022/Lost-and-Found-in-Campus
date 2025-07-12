@@ -1,0 +1,15 @@
+# Python cache files
+__pycache__/
+*.pyc
+
+# Environment file
+.env
+
+# Virtual environments
+venv/
+
+# SQLite or other databases
+*.db
+
+# Flask instance folder
+instance/

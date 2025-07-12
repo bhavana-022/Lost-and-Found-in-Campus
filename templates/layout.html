@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lost and Found{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            font-family: 'Times New Roman', Times, serif;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .navbar {
+            background-color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border-bottom: 2px solid #ffc0cb;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .brand a {
+            text-decoration: none;
+            font-size: 28px;
+            font-weight: bold;
+            color: #000000;
+            transition: color 0.3s ease;
+        }
+        .brand a:hover {
+            color: #ff94c2;
+        }
+        .nav-links a {
+            margin-left: 22px;
+            text-decoration: none;
+            color: #000000;
+            font-size: 17px;
+            position: relative;
+            padding-bottom: 3px;
+            transition: color 0.3s ease;
+        }
+        .nav-links a.active {
+            color: #4db8ff;
+            font-weight: bold;
+        }
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            height: 2px;
+            width: 100%;
+            background-color: #4db8ff;
+        }
+        .nav-links a:hover {
+            color: #ff69b4;
+        }
+        .main-wrapper {
+            width: 100%;
+            padding: 40px 30px;
+            box-sizing: border-box;
+        }
+        .footer {
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 15px 0;
+            color: #444;
+            font-size: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .btn {
+            background-color: #6c5ce7;
+            color: white;
+            padding: 10px 22px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #5a4bcf;
+            transform: scale(1.05);
+        }
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .nav-links {
+                margin-top: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .nav-links a {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="brand">
+        <a href="{{ url_for('home') }}">Lost And Found</a>
+    </div>
+
+    <nav class="nav-links">
+        <a href="{{ url_for('home') }}" class="{% if request.endpoint == 'home' %}active{% endif %}">Home</a>
+
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('user.add_lost_item') }}" class="{% if request.endpoint == 'user.add_lost_item' %}active{% endif %}">Report Item</a>
+            <a href="{{ url_for('user.view_lost_items') }}" class="{% if request.endpoint == 'user.view_lost_items' %}active{% endif %}">Lost Items</a>
+            <a href="{{ url_for('user.view_found_items') }}" class="{% if request.endpoint == 'user.view_found_items' %}active{% endif %}">Found Items</a>
+            <a href="{{ url_for('user.contact_admin') }}" class="{% if request.endpoint == 'user.contact_admin' %}active{% endif %}">Contact Admin</a>
+            <a href="{{ url_for('user.logout') }}">Logout</a>
+
+        {% elif session.get('admin_id') %}
+            <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('admin.verified_items') }}" class="{% if request.endpoint == 'admin.verified_items' %}active{% endif %}">Verified Items</a>
+            <a href="{{ url_for('admin.view_claims') }}" class="{% if request.endpoint == 'admin.view_claims' %}active{% endif %}">Claimed Items</a>
+            <a href="{{ url_for('admin.logout') }}">Logout</a>
+
+        {% else %}
+            <a href="{{ url_for('user.login') }}" class="{% if request.endpoint == 'user.login' %}active{% endif %}">User Login</a>
+            <a href="{{ url_for('admin.login') }}" class="{% if request.endpoint == 'admin.login' %}active{% endif %}">Admin Login</a>
+        {% endif %}
+    </nav>
+</header>
+
+<main class="main-wrapper">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    © {{ current_year }} Lost And Found
+</footer>
+
+<!-- Flash Message Alert using SweetAlert2 -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    let iconType = 'info';
+                    let titleText = 'Notice';
+
+                    if (category === 'success') {
+                        iconType = 'success';
+                        titleText = 'Success!';
+                    } else if (category === 'danger' || category === 'error') {
+                        iconType = 'error';
+                        titleText = 'Error!';
+                    } else if (category === 'warning') {
+                        iconType = 'warning';
+                        titleText = 'Warning!';
+                    }
+
+                    Swal.fire({
+                        icon: iconType,
+                        title: titleText,
+                        text: {{ message | tojson }},
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    });
+</script>
+
+</body>
+</html>

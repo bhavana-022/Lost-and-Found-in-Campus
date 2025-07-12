@@ -1,0 +1,103 @@
+{% extends 'layout.html' %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        background-image: url("{{ url_for('static', filename='images/uploads/background1.jpeg') }}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-attachment: fixed;
+        font-family: 'Times New Roman', Times, serif;
+        margin: 0;
+        padding: 0;
+        animation: fadeInBody 1s ease-in-out;
+    }
+
+    @keyframes fadeInBody {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .home-container {
+        max-width: 600px;
+        margin: 120px auto;
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 40px 30px;
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        text-align: center;
+        animation: slideUp 1s ease-out;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .home-container h2 {
+        color: #d6336c;
+        font-size: 30px;
+        margin-bottom: 30px;
+        font-family: 'Times New Roman', serif;
+    }
+
+    .button-group {
+        margin-top: 20px;
+    }
+
+    .button-group a {
+        display: inline-block;
+        text-decoration: none;
+        background-color: #6c5ce7;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 30px;
+        margin: 10px;
+        font-weight: bold;
+        font-size: 16px;
+        font-family: 'Times New Roman', Times, serif;
+        transition: background 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 4px 12px rgba(108, 99, 231, 0.3);
+        animation: pulse 2s infinite;
+    }
+
+    .button-group a:hover {
+        background-color: #5a4bcf;
+        transform: scale(1.05);
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(108, 99, 231, 0.5);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(108, 99, 231, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(108, 99, 231, 0);
+        }
+    }
+</style>
+
+<div class="home-container">
+  {% if user_name %}
+    <h2>Welcome {{ user_name }}! You're logged in.</h2>
+  {% else %}
+    <h2>Welcome to Lost and Found System in Campus</h2>
+    <div class="button-group">
+      <a href="{{ url_for('user.login') }}">Login</a>
+      <a href="{{ url_for('user.register') }}">Register</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends 'layout.html' %}
+
+{% block title %}View Lost Items{% endblock %}
+
+{% block content %}
+<div class="full-width-items">
+
+    <h1>Lost Items</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <style>
+      body {
+        background: linear-gradient(135deg, #fceade, #c9e8e1, #fff1dc, #f8e7f1); /* Soft peach, teal, cream, and pink */
+        background-size: 400% 400%;
+        animation: backgroundFlow 20s ease infinite;
+      }
+
+      @keyframes backgroundFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      .full-width-items {
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+
+      .item-image { max-width: 150px; max-height: 150px; object-fit: cover; border-radius: 8px; }
+
+      table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #fffaf5; }
+      th, td { padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
+      th { background-color: #f2f7f6; color: #333; }
+
+      .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 5px; margin-right: 5px; }
+      .btn:last-child { margin-right: 0; }
+
+      .btn-success { background-color: #70c1b3; color: white; }
+      .btn-primary { background-color: #f67280; color: white; }
+      .btn-info { background-color: #f8b195; color: white; }
+      .btn-warning { background-color: #f6cd61; color: white; }
+      .btn-danger { background-color: #c06c84; color: white; }
+
+      .btn-disabled, .static-text-info {
+        background-color: #ddd; color: #666; cursor: not-allowed;
+        display: inline-block; padding: 6px 12px; border-radius: 4px; text-align: center;
+      }
+
+      .status-text { font-style: italic; color: #555; }
+      .text-success { color: #28a745; }
+      .text-warning { color: #ffc107; }
+    </style>
+
+    <p>Displaying relevant items. Total: {{ items|length }}</p>
+
+    {% if items %}
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Reported By (Owner)</th>
+          <th>Department</th>
+          <th>Location Last Seen</th>
+          <th>Description</th>
+          <th>Image</th>
+          <th>Item Status</th>
+          <th>Verification</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.product_name }}</td>
+          <td>{{ item.reporter_name }}</td>
+          <td>{{ item.department }}</td>
+          <td>{{ item.location_found }}</td>
+          <td>{{ item.description }}</td>
+          <td>
+            {% if item.image_filename %}
+              <img src="{{ url_for('static', filename='images/uploads/' ~ item.image_filename) }}" alt="{{item.product_name}}" class="item-image">
+            {% else %}
+              No image
+            {% endif %}
+          </td>
+          <td>
+            {{ item.status | replace('_', ' ') | title }}
+            {% if item.status == 'waiting_for_confirmation' and item.finder_name %}
+                <br><small class="status-text">Finder: {{ item.finder_name }}</small>
+            {% endif %}
+          </td>
+          <td>{{ item.verification_status | title }}</td>
+          <td>
+            <!-- Keep your logic unchanged here -->
+            {# Original action rendering logic follows... #}
+            {% if item.status == 'lost' and item.verification_status == 'verified' %}
+                {% if item.user_id != current_user_id and item.finder_user_id is none %}
+                    <form method="POST" action="{{ url_for('user.report_item_as_found', item_id=item.id) }}">
+                        <button type="submit" class="btn btn-success">I Found This Item</button>
+                    </form>
+                {% elif item.user_id == current_user_id %}
+                    <span class="static-text-info">You reported this item lost</span>
+                {% elif item.finder_user_id is not none %}
+                    <span class="btn-disabled">Found process initiated by {{ item.finder_name }}</span>
+                {% endif %}
+            {% elif item.status == 'waiting_for_confirmation' %}
+                {% set owner_confirmed_positive_receipt = item.received_confirmed_by_reporter %}
+                {% set finder_confirmed_positive_handover = item.handed_confirmed_by_finder %}
+                {% set owner_action_taken = owner_confirmed_positive_receipt or item.owner_reported_wrong_item %}
+                {% set finder_action_taken = finder_confirmed_positive_handover or item.finder_reported_wrong_item %}
+
+                {% if item.user_id == current_user_id %}
+                    {% if not owner_action_taken %}
+                        <p class="status-text">Meetup with Finder ({{ item.finder_name }}). What was the outcome?</p>
+                        <form method="POST" action="{{ url_for('user.confirm_receipt_from_finder', item_id=item.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-primary">✅ I Received My Item</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('user.report_wrong_lost_item', item_id=item.id, role='claimer') }}" style="display:inline;">
+                            <button class="btn btn-danger">❌ This is NOT my item</button>
+                        </form>
+                    {% elif owner_confirmed_positive_receipt %}
+                        <span class="static-text-info">You confirmed receipt.
+                        {% if not finder_action_taken %} Waiting for {{ item.finder_name }}.
+                        {% elif item.finder_reported_wrong_item %} {{ item.finder_name }} reported a mismatch.
+                        {% endif %}
+                        </span>
+                    {% elif item.owner_reported_wrong_item %}
+                        <span class="static-text-info">You reported 'Not my item'.
+                        {% if not finder_action_taken %} Waiting for {{ item.finder_name }}.
+                        {% elif finder_confirmed_positive_handover %} {{item.finder_name}} confirmed handover despite your report. Admin may review.
+                        {% endif %}
+                        </span>
+                    {% endif %}
+                    {% if item.finder_reported_wrong_item and not owner_action_taken %}
+                        <p class="status-text text-warning" style="margin-top:5px;">Finder ({{ item.finder_name }}) indicated a mismatch. Please confirm.</p>
+                    {% endif %}
+                {% elif item.finder_user_id == current_user_id %}
+                    {% if not finder_action_taken %}
+                        <p class="status-text">Meetup with Owner ({{ item.reporter_name }}). What was the outcome?</p>
+                        <form method="POST" action="{{ url_for('user.confirm_handover_to_owner', item_id=item.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-info">✅ I Handed Item to Owner</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('user.report_wrong_lost_item', item_id=item.id, role='reporter') }}" style="display:inline;">
+                            <button class="btn btn-danger">❌ This is NOT their item</button>
+                        </form>
+                    {% elif finder_confirmed_positive_handover %}
+                        <span class="static-text-info">You confirmed handover.
+                        {% if not owner_action_taken %} Waiting for {{ item.reporter_name }}.
+                        {% elif item.owner_reported_wrong_item %} {{ item.reporter_name }} reported 'Not my item'.
+                        {% endif %}
+                        </span>
+                    {% elif item.finder_reported_wrong_item %}
+                        <span class="static-text-info">You reported 'Not their item'.
+                        {% if not owner_action_taken %} Waiting for {{ item.reporter_name }}.
+                        {% elif owner_confirmed_positive_receipt %} {{item.reporter_name}} confirmed receipt despite your report. Admin may review.
+                        {% endif %}
+                        </span>
+                    {% endif %}
+                    {% if item.owner_reported_wrong_item and not finder_action_taken %}
+                        <p class="status-text text-warning" style="margin-top:5px;">Owner ({{ item.reporter_name }}) reported this is not their item. Please confirm.</p>
+                    {% endif %}
+                {% else %}
+                    <span class="btn-disabled">Handover in progress</span>
+                    {% if item.owner_reported_wrong_item and item.finder_reported_wrong_item %}
+                        <br><small class="status-text text-warning">Mismatch reported. Awaiting resolution.</small>
+                    {% elif item.owner_reported_wrong_item %}
+                        <br><small class="status-text">Owner reported an issue.</small>
+                    {% elif item.finder_reported_wrong_item %}
+                        <br><small class="status-text">Finder reported an issue.</small>
+                    {% elif owner_action_taken and not finder_action_taken %}
+                        <br><small class="status-text">Waiting for finder's confirmation.</small>
+                    {% elif not owner_action_taken and finder_action_taken %}
+                        <br><small class="status-text">Waiting for owner's confirmation.</small>
+                    {% endif %}
+                {% endif %}
+            {% elif item.status == 'resolved' %}
+                <p class="text-success">Item has been returned to {{ item.reporter_name }}.</p>
+            {% else %}
+                <span class="static-text-info">No actions available</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No lost items match the criteria currently.</p>
+    {% endif %}
+</div>
+{% endblock %}

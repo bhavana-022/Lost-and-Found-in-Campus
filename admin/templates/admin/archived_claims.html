@@ -1,0 +1,88 @@
+{% extends 'layout.html' %}
+
+{% block title %}Admin - Archived Claims{% endblock %}
+
+{% block content %}
+
+<style>
+  body {
+    background-color: #e6f1ee; /* pastel teal-like background */
+  }
+
+  .archived-claim-container {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    background-color: #fdfcfb; /* soft beige-white */
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .archived-claim-container h3 {
+    margin-bottom: 10px;
+  }
+
+  .archived-claim-container img {
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  .status-check {
+    color: green;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .soft-link {
+    margin-top: 30px;
+    display: inline-block;
+  }
+</style>
+
+<h2 style="margin-bottom: 30px;">Archived Claimed Items</h2>
+
+{% if claims %}
+    {% for claim in claims %}
+        <div class="archived-claim-container">
+
+            <div class="status-check">✔️ This claim is closed and archived</div>
+
+            <div style="margin-bottom: 20px;">
+                <h3>Item: {{ claim.product_name }}</h3>
+                {% if claim.image_filename %}
+                    <img src="{{ url_for('static', filename='images/uploads/' + claim.image_filename) }}" width="120">
+                {% else %}
+                    <p>No image available</p>
+                {% endif %}
+                <p><strong>Item ID:</strong> {{ claim.item_id }}</p>
+                <p><strong>Description:</strong> {{ claim.description }}</p>
+                <p><strong>Reported At:</strong> {{ claim.item_reported_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Item Final Status:</strong> {{ claim.item_status | capitalize }}</p>
+            </div>
+
+            <hr style="margin: 20px 0;">
+
+            <div style="margin-bottom: 20px;">
+                <p><strong>Original Reporter (Finder):</strong> {{ claim.reporter_name }} ({{ claim.reporter_email }})</p>
+                <p><strong>Claimer:</strong> {{ claim.claimer_name }} ({{ claim.claimer_email }})</p>
+                <p><strong>Claim Initiated On:</strong> {{ claim.claim_date.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+
+            <hr style="margin: 20px 0;">
+
+            <div style="margin-bottom: 20px;">
+                <p><strong>Claim Internal Status:</strong> {{ claim.claim_internal_status | capitalize }}</p>
+                <p><strong>Original Reporter (Finder) Confirmed Handover:</strong> <span style="color: green;">✔️ Yes</span></p>
+                <p><strong>Claimer Confirmed Receipt:</strong> <span style="color: green;">✔️ Yes</span></p>
+                <p><strong>Admin Closed:</strong> <span style="color: green;">✔️ Yes</span></p>
+            </div>
+
+        </div>
+    {% endfor %}
+{% else %}
+    <p>No archived claims found.</p>
+{% endif %}
+
+<p class="soft-link"><a href="{{ url_for('admin.view_claims') }}">Back to Active Claims</a></p>
+
+{% endblock %}

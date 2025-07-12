@@ -1,0 +1,182 @@
+{% extends 'layout.html' %}
+{% block title %}Admin - Active Claims{% endblock %}
+
+{% block content %}
+
+<style>
+  body {
+     background-image: url("{{ url_for('static', filename='images/uploads/background3.jpeg') }}");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-attachment: fixed;
+    font-family: 'Times New Roman', serif;
+  }
+
+  h2 {
+    color: #d6336c;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  .claim-card {
+    background-color: #fefbf9; /* soft beige/white */
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+    padding: 25px;
+    margin-bottom: 30px;
+  }
+
+  .claim-card h3 {
+    color: #6c5ce7;
+  }
+
+  .alert {
+    border-radius: 10px;
+  }
+
+  img {
+    border-radius: 10px;
+    margin-bottom: 15px;
+  }
+
+  button {
+    font-weight: bold;
+    font-family: 'Times New Roman', serif;
+  }
+
+  .btn-close-claim {
+    background-color: #6c5ce7;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(108, 99, 231, 0.3);
+  }
+
+  .btn-close-claim:hover {
+    background-color: #5a4bcf;
+    transform: scale(1.05);
+  }
+
+  .btn-disabled {
+    background-color: #ccc;
+    color: #444;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: not-allowed;
+  }
+
+  .view-archived {
+    display: inline-block;
+    background-color: #ff85a2; /* soft coral pink */
+    color: white;
+    padding: 12px 30px;
+    font-weight: bold;
+    font-family: 'Times New Roman', serif;
+    border: none;
+    border-radius: 30px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(255, 133, 162, 0.4);
+    transition: background 0.3s ease;
+  }
+
+  .view-archived:hover {
+    background-color: #e57490;
+    text-decoration: none;
+    color: white;
+  }
+
+  .text-label {
+    font-weight: bold;
+    color: #444;
+  }
+
+  .status-text {
+    font-weight: bold;
+  }
+</style>
+
+<h2>Active Claimed Items (Awaiting Admin Action)</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+{% if claims %}
+  {% for claim in claims %}
+    <div class="claim-card">
+      <h3>Item: {{ claim.product_name }}</h3>
+
+      {% if claim.image_filename %}
+        <img src="{{ url_for('static', filename='images/uploads/' + claim.image_filename) }}" alt="Claimed Item" width="150">
+      {% else %}
+        <p>No image available</p>
+      {% endif %}
+
+      <p><span class="text-label">Item ID:</span> {{ claim.item_id }}</p>
+      <p><span class="text-label">Description:</span> {{ claim.description }}</p>
+      <p><span class="text-label">Reported At:</span> {{ claim.item_reported_at.strftime('%Y-%m-%d %H:%M') }}</p>
+      <p><span class="text-label">Status:</span> {{ claim.item_status | capitalize }}</p>
+
+      <hr>
+
+      <p><span class="text-label">Finder:</span> {{ claim.reporter_name }} ({{ claim.reporter_email }})</p>
+      <p><span class="text-label">Claimer:</span> {{ claim.claimer_name }} ({{ claim.claimer_email }})</p>
+      <p><span class="text-label">Claim Initiated:</span> {{ claim.claim_date.strftime('%Y-%m-%d %H:%M') }}</p>
+
+      <hr>
+
+      <p><span class="text-label">Claim Status:</span> 
+        {% if claim.claim_internal_status.lower() == 'pending' %}
+          <span class="status-text" style="color: orange;">Pending</span>
+        {% elif claim.claim_internal_status.lower() == 'completed' %}
+          <span class="status-text" style="color: green;">Completed</span>
+        {% else %}
+          {{ claim.claim_internal_status }}
+        {% endif %}
+      </p>
+
+      <p><span class="text-label">Reporter Confirmed:</span>
+        {% if claim.reporter_confirmed %}✔️ Yes{% else %}❌ No{% endif %}
+      </p>
+
+      <p><span class="text-label">Claimer Confirmed:</span>
+        {% if claim.claimer_confirmed %}✔️ Yes{% else %}❌ No{% endif %}
+      </p>
+
+      <p><span class="text-label">Admin Closed:</span>
+        {% if claim.closed %}✔️ Yes{% else %}❌ No{% endif %}
+      </p>
+
+      {% if claim.reporter_confirmed and claim.claimer_confirmed and not claim.closed %}
+        <form method="POST" action="{{ url_for('admin.close_claim', claim_id=claim.claim_id) }}"
+              onsubmit="return confirm('Close and archive this claim?');">
+          <button type="submit" class="btn-close-claim">
+            ✅ Close Case & Archive Item
+          </button>
+        </form>
+      {% else %}
+        <button disabled class="btn-disabled">
+          Waiting for user confirmations to close
+        </button>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+  <p style="text-align: center; font-weight: bold; color: #666;">No active claims found that are ready for admin action.</p>
+{% endif %}
+
+<p style="text-align: center; margin-top: 50px;">
+  <a href="{{ url_for('admin.view_archived_claims') }}" class="view-archived">📂 View All Archived Claims</a>
+</p>
+
+{% endblock %}
+

@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+{% block title %}Contact Admin{% endblock %}
+
+{% block content %}
+<style>
+    .contact-container {
+        max-width: 650px;
+        background: #fff;
+        padding: 30px 40px;
+        border-radius: 15px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        margin: auto;
+    }
+
+    .contact-container h2 {
+        margin-bottom: 25px;
+        text-align: center;
+        color: #333;
+    }
+
+    .contact-form-group {
+        margin-bottom: 15px;
+    }
+
+    .contact-form-group label {
+        font-weight: bold;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .contact-form-group input,
+    .contact-form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .contact-submit-btn {
+        padding: 10px 30px;
+        background-color: #6c5ce7;
+        color: white;
+        border: none;
+        border-radius: 30px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s ease;
+    }
+
+    .contact-submit-btn:hover {
+        background-color: #5a4bcf;
+        transform: scale(1.05);
+    }
+</style>
+
+<div class="container contact-container">
+    <h2>Contact Admin / Feedback</h2>
+    <form method="POST">
+        <div class="contact-form-group">
+            <label>Name</label>
+            <input name="name" class="form-control" required>
+        </div>
+        <div class="contact-form-group">
+            <label>Email</label>
+            <input name="email" type="email" class="form-control" required>
+        </div>
+        <div class="contact-form-group">
+            <label>Subject</label>
+            <input name="subject" class="form-control" required>
+        </div>
+        <div class="contact-form-group">
+            <label>Message</label>
+            <textarea name="message" rows="5" class="form-control" required></textarea>
+        </div>
+        <div style="text-align: center;">
+            <button type="submit" class="contact-submit-btn">Send Message</button>
+        </div>
+    </form>
+</div>
+
+{% if session.pop('show_feedback_success', None) %}
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Feedback Submitted!',
+        text: 'Thank you for your feedback. We’ll get back to you soon.',
+        showConfirmButton: false,
+        timer: 3000
+    });
+</script>
+{% endif %}
+{% endblock %}

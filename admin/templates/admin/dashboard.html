@@ -1,0 +1,144 @@
+{% extends 'layout.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        font-family: 'Times New Roman', Times, serif;
+        background-color: #dbeeea; /* soft teal background */
+    }
+
+    .section-title {
+        text-align: center;
+        color: #d6336c; /* matching the main pink header in screenshot */
+        font-size: 28px;
+        margin: 30px 0 20px;
+        font-family: 'Times New Roman', Times, serif;
+    }
+
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px 40px;
+    }
+
+    .item-card {
+        background-color: #fefbf9; /* soft beige-white */
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        font-family: 'Times New Roman', Times, serif;
+        transition: transform 0.2s ease;
+    }
+
+    .item-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .item-image {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        border: 2px solid #e6e6e6;
+    }
+
+    .item-info p {
+        margin-bottom: 8px;
+        font-size: 15px;
+        color: #333;
+    }
+
+    .badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: bold;
+        font-family: 'Times New Roman', Times, serif;
+    }
+
+    .badge-success {
+        background-color: #7bdcb5; /* pastel green */
+        color: white;
+    }
+
+    .badge-danger {
+        background-color: #ff6b6b; /* soft red */
+        color: white;
+    }
+
+    .badge-warning {
+        background-color: #ffe066; /* soft yellow */
+        color: black;
+    }
+
+    .btn-warning {
+        background-color: #6c5ce7;
+        color: white;
+        padding: 10px 22px;
+        font-size: 14px;
+        font-family: 'Times New Roman', Times, serif;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 4px 10px rgba(108, 99, 231, 0.3);
+    }
+
+    .btn-warning:hover {
+        background-color: #5a4bcf;
+        transform: scale(1.05);
+    }
+
+    p {
+        font-family: 'Times New Roman', Times, serif;
+    }
+</style>
+
+<h2 class="section-title">Admin Dashboard - Reported Items</h2>
+
+{% if items %}
+    <div class="items-grid">
+        {% for item in items %}
+            <div class="item-card">
+                <img src="{{ url_for('static', filename='images/uploads/' + item.image_filename) }}" alt="Item Image" class="item-image">
+                <div class="item-info">
+                    <p><strong>Name:</strong> {{ item.name }}</p>
+                    <p><strong>Phone:</strong> {{ item.phone }}</p>
+                    <p><strong>Product:</strong> {{ item.product_name }}</p>
+                    <p><strong>Location:</strong> {{ item.location_found }}</p>
+                    <p><strong>Description:</strong> {{ item.description }}</p>
+
+                    <p><strong>Status:</strong> 
+                        {% if item.status == 'lost' %}
+                            <span class="badge badge-danger">Lost</span>
+                        {% else %}
+                            <span class="badge badge-success">Found</span>
+                        {% endif %}
+                    </p>
+
+                    <p><strong>Verification:</strong> 
+                        {% if item.verification_status == 'verified' %}
+                            <span class="badge badge-success">Verified</span>
+                        {% else %}
+                            <span class="badge badge-warning">Unverified</span>
+                        {% endif %}
+                    </p>
+
+                    {% if item.verification_status == 'unverified' %}
+                        <form method="POST" action="{{ url_for('admin.verify_item', item_id=item.id) }}">
+                            <button type="submit" class="btn btn-warning">Verify</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p style="text-align:center; font-size:16px; color:#777;">No reported items found.</p>
+{% endif %}
+{% endblock %}

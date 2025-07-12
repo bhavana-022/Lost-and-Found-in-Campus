@@ -1,0 +1,210 @@
+{% extends 'layout.html' %}
+
+{% block title %}View Found Items{% endblock %}
+
+{% block content %}
+<div class="soft-bg full-width-items mt-4">
+
+    <h1>Found Items</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <style>
+      body {
+        background-color: #e7f2f1;
+      }
+
+      .soft-bg {
+        background-color: #fdfcfa;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .item-image {
+        max-width: 120px;
+        max-height: 120px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th, td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+        vertical-align: top;
+        background-color: #ffffffb3;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        margin-bottom: 5px;
+        margin-right: 5px;
+      }
+
+      .btn-success {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .btn-primary {
+        background-color: #007bff;
+        color: white;
+      }
+
+      .btn-info {
+        background-color: #17a2b8;
+        color: white;
+      }
+
+      .btn-danger {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .btn-disabled, .static-text-info {
+        background-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-align: center;
+      }
+
+      .status-text {
+        font-style: italic;
+        color: #555;
+      }
+
+      .text-warning {
+        color: #ffc107;
+      }
+
+      .text-success {
+        color: #28a745;
+      }
+    </style>
+
+    <p>Total items: {{ items|length }}</p>
+
+    {% if items %}
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Reported By (Finder)</th>
+          <th>Department</th>
+          <th>Location Found</th>
+          <th>Image</th>
+          <th>Status</th>
+          <th>Verification</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.product_name }}</td>
+          <td>{{ item.reporter_name }}</td> {# User who reported it found initially #}
+          <td>{{ item.department }}</td>
+          <td>{{ item.location_found }}</td>
+          <td>
+            {% if item.image_filename %}
+              <img src="{{ url_for('static', filename='images/uploads/' ~ item.image_filename) }}" alt="{{item.product_name}}" class="item-image">
+            {% else %}
+              No image
+            {% endif %}
+          </td>
+          <td>
+            {{ item.status | replace('_', ' ') | title }}
+            {% if item.status == 'claim_requested' and item.claimer_name %}
+                <br><small class="status-text">Claimer: {{ item.claimer_name }}</small>
+            {% endif %}
+          </td>
+          <td>{{ item.verification_status | title }}</td>
+          <td>
+            {# --- Initial "Claim" button for 'found' items --- #}
+            {% if item.status == 'found' and item.verification_status == 'verified' and item.user_id != current_user_id and not item.claim_id %}
+              <form method="POST" action="{{ url_for('user.claim_item', item_id=item.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-success">Claim This Item</button>
+              </form>
+            {% elif item.status == 'found' and item.user_id == current_user_id %}
+              <span class="static-text-info">You reported this item</span>
+            
+            {# --- "Claim Requested" State --- #}
+            {% elif item.status == 'claim_requested' and item.claim_id %}
+                {% if not item.claim_closed %}
+                    <p class="status-text">Waiting for confirmation from both parties.</p>
+                    {# Button for Claimer to confirm receipt #}
+                    {% if item.claimer_user_id == current_user_id and not item.claim_claimer_confirmed %}
+                        <form method="POST" action="{{ url_for('user.confirm_receipt_by_claimer', claim_id=item.claim_id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-primary">I Received Item from {{ item.reporter_name }}</button>
+                        </form>
+                    {% elif item.claimer_user_id == current_user_id and item.claim_claimer_confirmed %}
+                        <span class="static-text-info">You confirmed receipt. Waiting for reporter.</span>
+                    {% endif %}
+
+                    {# Button for Original Reporter (Finder) to confirm handover #}
+                    {% if item.user_id == current_user_id and not item.claim_reporter_confirmed %} {# item.user_id is the original finder/reporter of 'found' item #}
+                        <form method="POST" action="{{ url_for('user.confirm_handover_by_reporter', claim_id=item.claim_id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-info">I Handed Item to {{ item.claimer_name }}</button>
+                        </form>
+                    {% elif item.user_id == current_user_id and item.claim_reporter_confirmed %}
+                         <span class="static-text-info">You confirmed handover. Waiting for claimer.</span>
+                    {% endif %}
+                    
+                    {# For other users viewing an active claim #}
+                    {% if item.claimer_user_id != current_user_id and item.user_id != current_user_id %}
+                        <span class="btn-disabled">Claim in Progress</span>
+                    {% endif %}
+                {% else %} {# Claim is closed #}
+                     <span class="static-text-info">Claim process completed.</span>
+                {% endif %}
+            
+            {# --- "Returned to Claimer" State --- #}
+            {% elif item.status == 'returned_to_claimer' %}
+              <p class="text-success">Item returned to claimer ({{ item.claimer_name if item.claimer_name else 'N/A' }}).</p>
+              {# Admin will see "Archive" button in their interface #}
+            
+            {% else %}
+                {# For items with active claims already, or other states not covered above #}
+                {% if item.claim_id and not item.claim_closed %}
+                    <span class="btn-disabled">Claim in Progress</span>
+                {% elif item.claim_id and item.claim_closed %}
+                    <span class="static-text-info">Claim process completed.</span>
+                {% elif item.status != 'found' %} {# e.g. if it's unverified, or some other status #}
+                     <span class="static-text-info">No action available</span>
+                {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>No found items match the criteria currently.</p>
+    {% endif %}
+</div>
+{% endblock %}

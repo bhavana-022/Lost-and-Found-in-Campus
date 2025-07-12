@@ -1,0 +1,89 @@
+{% extends 'layout.html' %}
+{% block title %}Manage Items{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        font-family: 'Times New Roman', Times, serif;
+        background-color: #f8f9fa;
+    }
+
+    h2 {
+        text-align: center;
+        color: #d6336c;
+        font-family: 'Times New Roman', Times, serif;
+        margin-top: 20px;
+        margin-bottom: 30px;
+    }
+
+    table {
+        width: 95%;
+        margin: auto;
+        border-collapse: collapse;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        background-color: #ffffff;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 14px 20px;
+        text-align: left;
+        font-family: 'Times New Roman', Times, serif;
+    }
+
+    th {
+        background-color: #6c5ce7;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    tr:hover {
+        background-color: #f0e8ff;
+    }
+
+    td a {
+        background-color: #6c5ce7;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 30px;
+        text-decoration: none;
+        font-family: 'Times New Roman', Times, serif;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+    }
+
+    td a:hover {
+        background-color: #5a4bcf;
+    }
+</style>
+
+<h2>All Reported Items</h2>
+<table border="1">
+    <tr>
+        <th>Item Name</th>
+        <th>Description</th>
+        <th>Location</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+    {% for item in items %}
+    <tr>
+        <td>{{ item.item_name }}</td>
+        <td>{{ item.description }}</td>
+        <td>{{ item.location }}</td>
+        <td>{{ item.date_lost }}</td>
+        <td>{{ item.status }}</td>
+        <td>
+            <a href="/admin/delete/{{ item.id }}">Delete</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
