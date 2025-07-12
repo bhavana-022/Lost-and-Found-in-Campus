@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: lost-and-found-flask
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: EMAIL_USER
+        value: studentjntuh3@gmail.com
+      - key: EMAIL_PASS
+        value: rqwm eyok yfji gszu
